@@ -31,9 +31,7 @@ def train_model(model, device, train_loader, val_loader, criterion, optimizer, n
     val_L = [] # Validation losses
     model = model.to(device)
 
-    n_epoch = 40
-
-    for epoch in range(n_epoch):
+    for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
         train_loader_tqdm = tqdm(train_loader, desc=f'Epoch {epoch+1}/{n_epoch}', unit='batch')
@@ -79,7 +77,7 @@ def train_model(model, device, train_loader, val_loader, criterion, optimizer, n
 
         train_L.append(running_loss/len(train_loader.dataset))
         val_L.append(val_loss/len(val_loader.dataset))
-        print(f"Epoch {epoch+1}/{n_epoch}, Train Loss: {running_loss/len(train_loader.dataset):.4f}, Val Loss: {val_loss/len(val_loader.dataset):.4f}, Val Acc: {(correct/total)*100:.2f}%")
+        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {running_loss/len(train_loader.dataset):.4f}, Val Loss: {val_loss/len(val_loader.dataset):.4f}, Val Acc: {(correct/total)*100:.2f}%")
 
     torch.save(model.state_dict(), 'model.pth')
 
@@ -97,10 +95,9 @@ if __name__ == "__main__":
 
     # Load data
     df, image_names, _, painter_names_full, _ = create_dataframe(args.data_dir)
-    features, labels = create_tensor(args.data_dir)
+    features, labels = create_tensor(df, image_names, painter_names_full, args.data_dir) 
     train_loader, val_loader, _ = get_dataloader(features, labels, args.batch_size)
-    features, labels = create_tensor(df, image_names, painter_names_full, args.data_dir)
-    
+   
     # Create model
     model = create_model("resnet18", df)
 
