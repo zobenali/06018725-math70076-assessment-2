@@ -142,3 +142,26 @@ def get_num_classes(df):
     num_classes = len(df['painter'].unique())
 
     return num_classes
+
+def get_dataloader(feature_tensor, label_tensor, batch_size=32):
+    """
+    This function creates a dataloader from the feature tensor and the label tensor
+    Parameters
+    ---------- 
+    feature_tensor : torch.Tensor
+        tensor of images of shape (n_images, 3, 224, 224)
+    label_tensor : torch.Tensor
+        tensor of labels of shape (n_images,) 
+    batch_size : int
+        size of the batches
+    
+    Returns
+    ------- 
+    dataloader : torch.utils.data.DataLoader 
+        dataloader for the training set
+    
+    """
+    dataset = torch.utils.data.TensorDataset(feature_tensor, label_tensor)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    return dataloader
