@@ -34,7 +34,7 @@ def train_model(model, device, train_loader, val_loader, criterion, optimizer, n
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        train_loader_tqdm = tqdm(train_loader, desc=f'Epoch {epoch+1}/{n_epoch}', unit='batch')
+        train_loader_tqdm = tqdm(train_loader, desc=f'Epoch {epoch+1}/{num_epochs}', unit='batch')
 
         for inputs, targets in train_loader_tqdm:
             inputs, targets = inputs.to(device), targets.to(device)
