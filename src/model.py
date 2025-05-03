@@ -18,12 +18,25 @@ def create_model(model_name, dataframe):
     else:
         raise ValueError(f"Model {model_name} not supported")
     
-    n_features = model.fc.in_features if hasattr(model, 'fc') else model.classifier[1].in_features
-    model.fc = nn.Sequential(
+    if hasattr(model, 'fc')  : 
+        n_features = model.fc.in_features
+        model.fc = nn.Sequential(
                                 nn.Flatten(),
                                 nn.Linear(n_features, 256),
                                 nn.ReLU(),
                                 #nn.Dropout(p=0.5),
                                 nn.Linear(256, num_classes)
                             )
+        
+    
+    else : 
+        n_features = model.classifier[1].in_features
+        model.classifier = nn.Sequential(
+                                nn.Flatten(),
+                                nn.Linear(n_features, 256),
+                                nn.ReLU(),
+                                #nn.Dropout(p=0.5),
+                                nn.Linear(256, num_classes)
+                            )
+    
     return model

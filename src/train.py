@@ -1,6 +1,9 @@
 import numpy as np
 import tqdm
 import torch
+import argparse
+from data_processing import get_dataloader, create_tensor, create_dataframe
+from model import create_model
 
 def calculate_class_weights(true, nb_classes):
     """
@@ -79,5 +82,34 @@ def train_model(model, device, train_loader, val_loader, criterion, optimizer, n
         print(f"Epoch {epoch+1}/{n_epoch}, Train Loss: {running_loss/len(train_loader.dataset):.4f}, Val Loss: {val_loss/len(val_loader.dataset):.4f}, Val Acc: {(correct/total)*100:.2f}%")
 
     torch.save(model.state_dict(), 'model.pth')
-    
+
     return model, train_L, val_L
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train ResNet on Painting Classification")
+    parser.add_argument("--data_dir", type=str, default="data/processed", help="Path to processed image data")
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--epochs", type=int, default=40)
+    parser.add_argument("--lr", type=float, default=0.0001)
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+
+    args = parser.parse_args()
+
+    # Load data
+    df, image_names, _, painter_names_full, _ = create_dataframe(args.data_dir)
+    features, labels = create_tensor(args.data_dir)
+    train_loader, val_loader, _ = get_dataloader(features, labels, args.batch_size)
+    features, labels = create_tensor(df, image_names, painter_names_full, args.data_dir)
+    
+    # Create model
+    model = create_model("resnet18", df)
+
+    # Check imbalance and calculate class weights
+    weights =  torch.tensor(calculate_class_weights(train_loader.dataset.tensors[1], 10)).to(args.device)
+
+
+    criterion = torch.nn.CrossEntropyLoss(weights = weights)
+    optimizer = torch.optim.Adam(model.fc.parameters(), lr=args.lr)
+
+    # Train the model
+    train_model(model, args.device, train_loader, val_loader, criterion, optimizer, num_epochs=args.epochs)

@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 from PIL import Image
+from sklearn.model_selection import train_test_split
 
 
 normalise_resize = transforms.Compose([
@@ -123,7 +124,7 @@ def create_tensor(df, image_names, painter_names_full, Working_directory):
     X_tensor = torch.cat(X, dim=0)
     Y_tensor = torch.tensor(Y, dtype=torch.long)
 
-    return X_tensor, Y_tensor, label_to_int
+    return X_tensor, Y_tensor
 
 def get_num_classes(df):
     """
@@ -161,7 +162,16 @@ def get_dataloader(feature_tensor, label_tensor, batch_size=32):
         dataloader for the training set
     
     """
-    dataset = torch.utils.data.TensorDataset(feature_tensor, label_tensor)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    X_train, X_test, Y_train, Y_test = train_test_split(feature_tensor,label_tensor, test_size=0.15)
+    x_test, x_val, y_test, y_val = train_test_split(X_test, Y_test, test_size=0.5)
 
-    return dataloader
+    train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
+    val_dataset = torch.utils.data.TensorDataset(x_val, y_val)
+    test_dataset = torch.utils.data.TensorDataset(x_test, y_test)
+
+
+    train_loader =torch.utils.data. DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
+    
+    return train_loader, val_loader, test_loader
