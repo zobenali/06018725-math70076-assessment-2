@@ -61,7 +61,7 @@ def unformat_image(img_in):
 
 	return img_out
 
-def create_dataframe(working_directory, img_max = 10):
+def create_dataframe(working_directory, img_max = 5):
     painters = [name for name in os.listdir(working_directory) if os.path.isdir(os.path.join(working_directory, name))] #liste des peintres
     #print(painters)
 
