@@ -3,9 +3,13 @@ import glob
 import pandas as pd
 import numpy as np
 import torch
+import tqdm
+from tqdm import tqdm
+import argparse
 from torchvision import transforms
 from PIL import Image
 from sklearn.model_selection import train_test_split
+
 
 
 normalise_resize = transforms.Compose([
@@ -57,8 +61,9 @@ def unformat_image(img_in):
 
 	return img_out
 
-def create_dataframe(working_directory):
+def create_dataframe(working_directory, img_max = 10):
     painters = [name for name in os.listdir(working_directory) if os.path.isdir(os.path.join(working_directory, name))] #liste des peintres
+    #print(painters)
 
     images_by_painter = {} # Dictionnary with painter name as key and list of images as value
 
@@ -67,10 +72,14 @@ def create_dataframe(working_directory):
     painter_names_full = []
     bdates = []
 
+
     for painter in painters:
         painter_path = os.path.join(working_directory, painter)
         image_paths = glob.glob(os.path.join(painter_path, '*'))
         images_by_painter[painter] = image_paths
+
+        image_paths = image_paths[:img_max]
+
         for image_path in image_paths:
             image_name = os.path.basename(image_path)
             image_names.append(image_name)
@@ -114,7 +123,7 @@ def create_tensor(df, image_names, painter_names_full, Working_directory):
 
     label_to_int = {label: idx for idx, label in enumerate(df['painter'].unique())} #change painter as
 
-    for n in range(len(image_names)):
+    for n in tqdm(range(len(image_names)), desc="Creating tensors", unit="image"):
         img_path = os.path.join(Working_directory, painter_names_full[n], df.iloc[n]['image_name'])
         img_tensor, _ = format_image(img_path)
 
@@ -123,6 +132,12 @@ def create_tensor(df, image_names, painter_names_full, Working_directory):
     
     X_tensor = torch.cat(X, dim=0)
     Y_tensor = torch.tensor(Y, dtype=torch.long)
+    size_in_bytes = X_tensor.element_size() * X_tensor.nelement()
+    size_in_megabytes = size_in_bytes / (1024 ** 2)
+    print(f"Taille du tenseur X_tensor : {size_in_megabytes:.2f} MB")
+    size_in_bytes = Y_tensor.element_size() * Y_tensor.nelement()
+    size_in_megabytes = size_in_bytes / (1024 ** 2)
+    print(f"Taille du tenseur Y_tensor : {size_in_megabytes:.2f} MB")
 
     return X_tensor, Y_tensor
 
@@ -175,3 +190,23 @@ def get_dataloader(feature_tensor, label_tensor, batch_size=32):
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
     
     return train_loader, val_loader, test_loader
+
+def save_tensors(X_tensor, Y_tensor, output_dir='data/processed'):
+    os.makedirs(output_dir, exist_ok=True)
+    torch.save(X_tensor, os.path.join(output_dir, 'X_tensor.pt'))
+    torch.save(Y_tensor, os.path.join(output_dir, 'Y_tensor.pt'))
+    print(f"Tensors saved to {output_dir}")
+
+def main(working_directory, output_directory='data/processed'):
+    df, image_names, painter_names, painter_names_full, _ = create_dataframe(working_directory)
+    X_tensor, Y_tensor = create_tensor(df, image_names, painter_names_full, working_directory)
+    #save_tensors(X_tensor, Y_tensor, output_directory)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Preprocess painting images and save tensors.")
+    parser.add_argument('--input_dir', type=str, required=True, help='Path to the folder containing painter folders.')
+    parser.add_argument('--output_dir', type=str, default='data/processed', help='Directory where processed tensors will be saved.')
+
+    args = parser.parse_args()
+
+    main(args.input_dir, args.output_dir)
