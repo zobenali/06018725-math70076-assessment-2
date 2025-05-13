@@ -1,4 +1,3 @@
-# gmm_analysis.py
 
 import numpy as np
 import torch
@@ -7,6 +6,9 @@ from sklearn.mixture import GaussianMixture
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+import argparse
+import pickle
+from tqdm import tqdm
 
 def extract_features(model, X_tensor, Y_tensor, device):
     """
@@ -36,7 +38,7 @@ def extract_features(model, X_tensor, Y_tensor, device):
     features = []
     labels = []
     with torch.no_grad():
-        for inputs, targets in loader:
+        for inputs, targets in tqdm(loader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             features.append(outputs)
@@ -78,7 +80,7 @@ def run_tsne(features):
         The t-SNE reduced feature array.
     """
     tsne = TSNE(n_components=2, random_state=1)
-    return tsne.fit_transform(features)
+    return tsne, tsne.fit_transform(features)
 
 def run_gmm(tsne_features, n_components):
     """
@@ -190,3 +192,42 @@ def plot_tsne_with_gmm(tsne_features, labels, gmm, label_colors, label_names, ti
     ax.set_ylabel('y')
     ax.legend(handles=legend_elements, title="Classes", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.show()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run GMM analysis on extracted features")
+    parser.add_argument("--model_path", type=str, required=True, help="Path to the saved PyTorch model (.pt or .pth)")
+    parser.add_argument("--data_path", type=str, required=True, help="Path to the pickle file containing X_tensor and Y_tensor")
+    parser.add_argument("--n_components", type=int, default=4, help="Number of GMM components (default: 4)")
+    parser.add_argument("--birthdates_path", type=str, required=False, help="Optional: path to numpy birthdates array (.pkl)")
+
+    args = parser.parse_args()
+
+    # Load model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = torch.load(args.model_path, map_location=device)
+    model.to(device)
+
+    # Load data
+    with open(args.data_path, "rb") as f:
+        data = pickle.load(f)
+        X_tensor = data["X"]
+        Y_tensor = data["Y"]
+
+    # Load birthdates (optional)
+    if args.birthdates_path:
+        with open(args.birthdates_path, "rb") as f:
+            birthdates = pickle.load(f)
+    else:
+        birthdates = np.zeros(X_tensor.shape[0])
+
+    # Run analysis
+    features, labels = extract_features(model, X_tensor, Y_tensor, device)
+    features_with_birth = add_birthdate_feature(features, birthdates)
+    tsne_features = run_tsne(features_with_birth)
+    gmm, gmm_labels = run_gmm(tsne_features, n_components=args.n_components)
+    centroids = compute_centroids(tsne_features, gmm_labels, num_classes=args.n_components)
+
+    # Plot
+    label_names = [f"Classe {i}" for i in range(args.n_components)]
+    plot_tsne_with_gmm(tsne_features, gmm_labels, gmm, label_colors=None, label_names=label_names, title="t-SNE + GMM Clustering")
+    print("GMM analysis completed.")
