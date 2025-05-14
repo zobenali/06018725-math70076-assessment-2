@@ -2,8 +2,6 @@ import argparse
 import numpy as np
 import torch
 import pickle
-import matplotlib.pyplot as plt
-from scipy.stats import chi2
 import pandas as pd
 from PIL import Image
 from scipy.stats import chi2
@@ -93,6 +91,7 @@ if __name__ == "__main__":
 
     # Load CSV file
     df = pd.read_csv(args.csv_path)
+    print(len(df['painter'].unique()))
     # Load model
     model = create_model("resnet18", df)
     model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu')))
@@ -117,14 +116,12 @@ if __name__ == "__main__":
     movements = df['movement'].to_numpy()
     all_movements = sorted(df['movement'].unique())
     label_to_index = {label: idx for idx, label in enumerate(all_movements)}
-    num_classes = len(all_movements)
 
     tsne, features_tsne = run_tsne(features_b)
     print(f"t-SNE computed")
 
     # Get coordinates of the new point 
-    image = Image.open(args.image_path)
-    image, _ = format_image(image)
+    image, _ = format_image(args.image_path)
 
     features_img = []
     labels_img = []
@@ -147,7 +144,7 @@ if __name__ == "__main__":
     X_new_tsne = calculate_tsne_point(features_b, features_with_birth_img, tsne)
     print(f"t-SNE coordinates of the new point computed")
     # GMM
-    gmm = run_gmm(features_tsne, n_components=args.n_components)
+    gmm,_  = run_gmm(features_tsne, n_components=args.n_components)
     means = gmm.means_
     covariances = gmm.covariances_
 

@@ -24,7 +24,7 @@ Make sure you also have all requirements including torchvision. You can use the 
 ```
 ## Project Structure
 
-The data folder cannot contain the data I used as they are too voluminous. Furtehrmore, they are part of a private collection so I won't make them public. However, there are a lot of paintings databases that you can use for this project as the code conatains all pre-processing functions. I linked some in data folder so you can make use of the project too.
+The data folder cannot contain the data I used as they are too voluminous. Furthermore, they are part of a private collection so I won't make them public. However, there are a lot of paintings databases that you can use for this project as the code contains all pre-processing functions. The main one used in litterature is probably WikiArt. I did try to create a webscrapping code so you can form data folders as I used it.
 
 The src folder contains all the code required to run the full project.
 
@@ -42,15 +42,13 @@ The src folder contains all the code required to run the full project.
 
  The outputs folder contains figures and model I obtained with this code.
 
- The report contains my Reflective_Summary in the context of my Imperial Course
-
 ## Usage 
-I try to furnish maximum data and results I obtained so one can work with this project. In data/processed, you will find the tensors and csv file I obtained with my dataset and so you can run movement.py easily. 
+I try to furnish maximum data and results I obtained so one can work with this project. In data/processed, you will find the csv file I obtained with my dataset and so you can run movement.py easily. You will thus find every painters from my database so you can parse this list with the scrapper.
 
 The folder outputs contains model.pt which is a test I did with this project.
-If you want to retrieve the weights from my model,create model then it  with pytorch.
+If you want to retrieve the weights from my model,use create_model from model.py and then load model_full.pt with pytorch.
 
-The folder output/figures shows some map I obtained with my project. 
+The folder output/figures shows some maps I obtained with my project. 
 
 I do recommend to use GPU as the project is very computationally expensive. I provided the notebook you can run on Colab in reports.
 
