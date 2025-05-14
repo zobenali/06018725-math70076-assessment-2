@@ -64,13 +64,16 @@ def get_paintings(artist_name, movement, n_max):
     url = f"{URL}/{artist_name}/all-works#!#filterName:Style_{code},resultType:masonry"
     print(f'Fetching paintings from {url}')
 
-    ajax_url = f"{URL}/ajax/ArtistAllPaintingsByFilter?json=2&artistUrl={artist_name}&filter=style:{code}"
-    res = requests.get(ajax_url, headers=HEADERS_AJAX)
-    data = res.json()
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+    time.sleep(5)
 
+    img_elmts = driver.find_elements(By.XPATH, '//li//img[@src and @title]')
     links = []
-    for item in data.get('Data', [])[:n_max]:
-        img_url = item.get('image')
+    for img in img_elmts[:n_max]:
+        img_url = img.get_attribute('src')
         if img_url:
             links.append(img_url)
     
